@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global safety net - Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true);
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Collection: users
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      // Allow users to list their own profile, though normally we use single item get
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isEmailVerified() && isValidId(userId) && request.auth.uid == userId && (
+        incoming().uid == userId &&
+        incoming().name is string && incoming().name.size() <= 100 &&
+        incoming().email == request.auth.token.email && incoming().email.size() <= 100 &&
+        incoming().location is string && incoming().location.size() <= 100 &&
+        incoming().niche is string && incoming().niche.size() <= 100 &&
+        incoming().plan is string && incoming().plan.size() <= 50
+      );
+
+      allow update: if isEmailVerified() && request.auth.uid == userId && (
+        incoming().name is string && incoming().name.size() <= 100 &&
+        incoming().email == request.auth.token.email &&
+        incoming().location is string && incoming().location.size() <= 100 &&
+        incoming().niche is string && incoming().niche.size() <= 100 &&
+        // Block manual tier escalation
+        incoming().plan == existing().plan &&
+        incoming().uid == existing().uid
+      );
+
+      allow delete: if false; // Users cannot delete their core profiles
+    }
+
+    // Collection: posts
+    match /posts/{postId} {
+      function isValidPost(post) {
+        return post.id is string && post.id.size() <= 128 &&
+          post.userId == request.auth.uid &&
+          post.title is string && post.title.size() <= 200 &&
+          post.platform is string && post.platform.size() <= 50 &&
+          post.date is string && post.date.size() <= 100 &&
+          post.status in ['draft', 'scheduled', 'published'];
+      }
+
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // The rule itself enforces that you can only list posts where userId matches the request user.
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isEmailVerified() && isValidId(postId) && isValidPost(incoming()) && (
+        // Relation synchronization - make sure user document exists
+        exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      );
+
+      allow update: if isEmailVerified() && isValidPost(incoming()) && existing().userId == request.auth.uid && (
+        // Action-based split
+        (incoming().diff(existing()).affectedKeys().hasOnly(['title', 'platform', 'date', 'status', 'views', 'likes', 'comments', 'engagement', 'audienceReach', 'revenue']))
+      );
+
+      allow delete: if isEmailVerified() && existing().userId == request.auth.uid;
+    }
+
+    // Collection: notifications
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Only allow client reads, client-side writes / creation are disabled (system generated only)
+      allow create, update, delete: if false;
+    }
+  }
+}

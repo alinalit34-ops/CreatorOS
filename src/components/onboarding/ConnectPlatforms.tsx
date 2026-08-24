@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
 
 // Premium custom SVG icons for brand recognition
 const YouTubeIcon = () => (
@@ -87,25 +87,158 @@ interface ConnectPlatformsProps {
   onNext: () => void;
   connectedPlatforms: string[];
   setConnectedPlatforms: React.Dispatch<React.SetStateAction<string[]>>;
+  userId?: string;
+  showToast?: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-export default function ConnectPlatforms({ onNext, connectedPlatforms, setConnectedPlatforms }: ConnectPlatformsProps) {
+export default function ConnectPlatforms({ onNext, connectedPlatforms, setConnectedPlatforms, userId, showToast }: ConnectPlatformsProps) {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [popupBlockedUrl, setPopupBlockedUrl] = useState<string | null>(null);
 
-  const handleConnect = (id: string) => {
+  const handleConnect = async (id: string) => {
     if (connectedPlatforms.includes(id)) {
       // Disconnect
       setConnectedPlatforms(prev => prev.filter(p => p !== id));
       setErrorMsg(null);
+      setPopupBlockedUrl(null);
       return;
     }
     setErrorMsg(null);
+    setPopupBlockedUrl(null);
+
+    // YouTube real OAuth flow trigger
+    if (id === 'youtube') {
+      setConnecting('youtube');
+      try {
+        const currentUid = userId || `user_${Date.now()}`;
+        showToast?.('Requesting Google OAuth authorization...', 'info');
+        const res = await fetch(`/api/auth/google/url?uid=${encodeURIComponent(currentUid)}`);
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "OAuth route not configured.");
+        }
+
+        if (!data.url) {
+          throw new Error("Invalid response from server (missing auth URL).");
+        }
+
+        const sessionId = data.sessionId || currentUid;
+
+        // Start background polling to catch token completion immediately
+        const pollTimer = setInterval(async () => {
+          try {
+            const check = await fetch(`/api/auth/google/session?uid=${encodeURIComponent(sessionId)}`);
+            const session = await check.json();
+            if (session.completed) {
+              clearInterval(pollTimer);
+              setPopupBlockedUrl(null);
+              setConnecting(null);
+              
+              const payload = {
+                type: 'OAUTH_AUTH_SUCCESS',
+                provider: 'youtube',
+                tokens: session.tokens,
+                youtubeStats: session.youtubeStats
+              };
+              localStorage.setItem('CREATOR_OS_AUTH_COMPLETED', JSON.stringify(payload));
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'CREATOR_OS_AUTH_COMPLETED',
+                newValue: JSON.stringify(payload)
+              }));
+            }
+          } catch (e) {}
+        }, 1500);
+
+        setTimeout(() => clearInterval(pollTimer), 120000);
+
+        const popup = window.open(data.url, 'youtube_oauth', 'width=600,height=720,status=no,resizable=yes');
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          setPopupBlockedUrl(data.url);
+          showToast?.('Popup blocked by browser. Please click the button below to authorize.', 'info');
+        } else {
+          showToast?.('Google Authorization window opened. Select your channel account.', 'info');
+        }
+      } catch (err: any) {
+        console.error("YouTube OAuth Error:", err);
+        setErrorMsg(err.message || "Failed to initialize YouTube connection.");
+        showToast?.(err.message, 'error');
+        setConnecting(null);
+      }
+      return;
+    }
+
+    // TikTok real OAuth flow trigger
+    if (id === 'tiktok') {
+      setConnecting('tiktok');
+      try {
+        const currentUid = userId || `user_${Date.now()}`;
+        showToast?.('Requesting TikTok OAuth authorization...', 'info');
+        const res = await fetch(`/api/auth/tiktok/url?uid=${encodeURIComponent(currentUid)}`);
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "TikTok OAuth route not configured.");
+        }
+
+        if (!data.url) {
+          throw new Error("Invalid response from server (missing auth URL).");
+        }
+
+        const sessionId = data.sessionId || currentUid;
+
+        // Start background polling to catch token completion immediately
+        const pollTimer = setInterval(async () => {
+          try {
+            const check = await fetch(`/api/auth/tiktok/session?uid=${encodeURIComponent(sessionId)}`);
+            const session = await check.json();
+            if (session.completed) {
+              clearInterval(pollTimer);
+              setPopupBlockedUrl(null);
+              setConnecting(null);
+              
+              const payload = {
+                type: 'OAUTH_AUTH_SUCCESS',
+                provider: 'tiktok',
+                tokens: session.tokens,
+                tiktokStats: session.tiktokStats
+              };
+              localStorage.setItem('CREATOR_OS_AUTH_COMPLETED', JSON.stringify(payload));
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'CREATOR_OS_AUTH_COMPLETED',
+                newValue: JSON.stringify(payload)
+              }));
+            }
+          } catch (e) {}
+        }, 1500);
+
+        setTimeout(() => clearInterval(pollTimer), 120000);
+
+        const popup = window.open(data.url, 'tiktok_oauth', 'width=600,height=720,status=no,resizable=yes');
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          setPopupBlockedUrl(data.url);
+          showToast?.('Popup blocked by browser. Please click the button below to authorize.', 'info');
+        } else {
+          showToast?.('TikTok Authorization window opened. Authorize Creator OS to sync stats.', 'info');
+        }
+      } catch (err: any) {
+        console.error("TikTok OAuth Error:", err);
+        setErrorMsg(err.message || "Failed to initialize TikTok connection.");
+        showToast?.(err.message, 'error');
+        setConnecting(null);
+      }
+      return;
+    }
+
+    // Standard simulation helper for client-only widgets
     setConnecting(id);
     setTimeout(() => {
       setConnectedPlatforms(prev => [...prev, id]);
       setConnecting(null);
-    }, 1200);
+    }, 900);
   };
 
   const handleContinue = () => {
@@ -147,6 +280,28 @@ export default function ConnectPlatforms({ onNext, connectedPlatforms, setConnec
           >
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{errorMsg}</span>
+          </motion.div>
+        )}
+        {popupBlockedUrl && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="w-full max-w-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-indigo-400 shrink-0" />
+              <span>Browser popup was blocked. Click to open authorization directly:</span>
+            </div>
+            <a
+              href={popupBlockedUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-xs shrink-0 inline-flex items-center gap-1.5 transition-colors"
+            >
+              Open Google Consent
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
           </motion.div>
         )}
       </AnimatePresence>

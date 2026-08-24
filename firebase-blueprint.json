@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user customization configurations, connected platform lists and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user authentication ID." },
+        "name": { "type": "string", "description": "The displayed pen or creator name." },
+        "email": { "type": "string", "format": "email", "description": "The contact email address." },
+        "niche": { "type": "string", "description": "The primary industry niche for creative content." },
+        "location": { "type": "string", "description": "The physical geography of the creator." },
+        "plan": { "type": "string", "description": "The current plan tier, e.g. Free, Pro Plan." },
+        "avatar": { "type": "string", "description": "URL to the user avatar image resource." },
+        "connectedPlatforms": { "type": "array", "description": "A list of platforms currently connected by the user." },
+        "preferences": {
+          "type": "object",
+          "description": "Creator experience preferences.",
+          "properties": {
+            "emailNotifications": { "type": "boolean" },
+            "aiInsights": { "type": "boolean" },
+            "theme": { "type": "string" }
+          }
+        }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A single content publication scheduled, drafted, or completed by the creator across connected platform channels.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "References the author UID." },
+        "title": { "type": "string" },
+        "platform": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "scheduled", "published"] },
+        "views": { "type": "number" },
+        "likes": { "type": "number" },
+        "comments": { "type": "number" },
+        "engagement": { "type": "number" },
+        "audienceReach": { "type": "number" },
+        "revenue": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "platform", "date", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User specific alerts or algorithm change digests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "time": { "type": "string" },
+        "unread": { "type": "boolean" }
+      },
+      "required": ["id", "userId", "title", "desc", "unread"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Root user profile document stored securely."
+    },
+    "posts/{postId}": {
+      "schema": "Post",
+      "description": "Individual multi-channel publisher posts, filtered by userId."
+    },
+    "notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Workspace alerts and algorithmic notifications."
+    }
+  }
+}

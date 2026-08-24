@@ -18,6 +18,8 @@ import { AUDIENCE_AGE, AUDIENCE_GEO } from '@/src/lib/mockData';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import StudioPlaque from '../brand/StudioPlaque';
+import StudioCard from '../brand/StudioCard';
 import { 
   Users, 
   MapPin, 
@@ -112,11 +114,13 @@ interface AudienceViewProps {
   posts: Post[];
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
   openNewPostModal: (title?: string, platform?: Platform, date?: string) => void;
+  youtubeChannelInfo?: any;
+  tiktokAccountInfo?: any;
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
   onNavigate: (screen: any) => void;
 }
 
-export default function AudienceView({ posts, setPosts, openNewPostModal, showToast, onNavigate }: AudienceViewProps) {
+export default function AudienceView({ posts, setPosts, openNewPostModal, youtubeChannelInfo, tiktokAccountInfo, showToast, onNavigate }: AudienceViewProps) {
   const [activePlatform, setActivePlatform] = useState<string>('all');
   const [selectedCell, setSelectedCell] = useState<{ dayIndex: number; hour: number }>({ dayIndex: 1, hour: 19 }); // Tuesday 7pm
   const [viewMode, setViewMode] = useState<'grid' | 'wave'>('grid');
@@ -220,40 +224,167 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
   };
 
   return (
-    <div className="space-y-8 pb-12 select-none text-left">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold mb-2">Audience Intelligence</h1>
-          <p className="text-muted-foreground text-sm">Dissect demographical presence and optimize engagement scheduling queues.</p>
-        </div>
-        <div className="flex bg-muted rounded-xl p-1 border border-border shrink-0">
-          {[
-            { id: 'all', label: 'All Channels' },
-            { id: 'youtube', label: 'YouTube' },
-            { id: 'instagram', label: 'Instagram' },
-            { id: 'tiktok', label: 'TikTok' },
-            { id: 'twitter', label: 'X' },
-          ].map((tab) => (
-            <button
-               key={tab.id}
-               onClick={() => setActivePlatform(tab.id)}
-               className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                 activePlatform === tab.id
-                   ? 'bg-background text-foreground shadow-sm font-bold'
-                   : 'text-muted-foreground hover:text-foreground'
-               }`}
-            >
-               {tab.label}
-            </button>
-          ))}
-        </div>
-      </header>
+    <div className="space-y-8 pb-12 select-none text-left font-sans">
+      {/* Unified Studio Plaque Header */}
+      <StudioPlaque
+        nodeId="NODE: 04"
+        category="DEMOGRAPHICAL TELEMETRY"
+        status="ACTIVE MONITORING"
+        statusColor="rose"
+        title="Audience Intelligence"
+        subtitle="Dissect demographical presence and optimize engagement scheduling queues."
+        action={
+          <div className="flex bg-muted/70 rounded-xl p-1 border border-border/80 shrink-0">
+            {[
+              { id: 'all', label: 'All Channels' },
+              { id: 'youtube', label: 'YouTube' },
+              { id: 'instagram', label: 'Instagram' },
+              { id: 'tiktok', label: 'TikTok' },
+              { id: 'twitter', label: 'X' },
+            ].map((tab) => (
+              <button
+                 key={tab.id}
+                 onClick={() => setActivePlatform(tab.id)}
+                 className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer transition-all ${
+                   activePlatform === tab.id
+                     ? 'bg-background text-foreground shadow-sm'
+                     : 'text-muted-foreground hover:text-foreground'
+                 }`}
+              >
+                 {tab.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      {/* Live YouTube Channel Audience Banner */}
+      {youtubeChannelInfo && (
+        <StudioCard
+          cornerBrackets={true}
+          watermark={true}
+          className="p-6 border-red-500/20 bg-gradient-to-r from-red-500/[0.08] via-background to-background"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              {youtubeChannelInfo.thumbnail ? (
+                <img 
+                  src={youtubeChannelInfo.thumbnail} 
+                  alt={youtubeChannelInfo.title} 
+                  className="w-14 h-14 rounded-2xl border-2 border-red-500/40 object-cover shadow-md"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-red-600/10 border border-red-500/30 flex items-center justify-center">
+                  <Youtube className="h-7 w-7 text-red-500" />
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground font-display">{youtubeChannelInfo.title}</h3>
+                  <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 text-[10px] uppercase font-bold font-mono">
+                    Live Verified
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                  {youtubeChannelInfo.customUrl || `@${youtubeChannelInfo.title.toLowerCase().replace(/\s+/g, '')}`} • Google OAuth Synchronized
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Live Subscribers</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof youtubeChannelInfo.metrics?.subscribers === 'number' ? youtubeChannelInfo.metrics.subscribers.toLocaleString() : '0'}
+                </span>
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Total Views</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof youtubeChannelInfo.metrics?.views === 'number' ? youtubeChannelInfo.metrics.views.toLocaleString() : '0'}
+                </span>
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Public Videos</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof youtubeChannelInfo.metrics?.videos === 'number' 
+                    ? youtubeChannelInfo.metrics.videos.toLocaleString() 
+                    : (typeof youtubeChannelInfo.metrics?.videoCount === 'number' ? youtubeChannelInfo.metrics.videoCount.toLocaleString() : '0')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </StudioCard>
+      )}
+
+      {/* Live TikTok Account Audience Banner */}
+      {tiktokAccountInfo && (
+        <StudioCard
+          cornerBrackets={true}
+          watermark={true}
+          className="p-6 border-cyan-500/20 bg-gradient-to-r from-cyan-500/[0.08] via-background to-background"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              {tiktokAccountInfo.avatarUrl ? (
+                <img 
+                  src={tiktokAccountInfo.avatarUrl} 
+                  alt={tiktokAccountInfo.displayName} 
+                  className="w-14 h-14 rounded-2xl border-2 border-cyan-500/40 object-cover shadow-md"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-cyan-600/10 border border-cyan-500/30 flex items-center justify-center">
+                  <Music className="h-7 w-7 text-cyan-500" />
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground font-display">{tiktokAccountInfo.displayName}</h3>
+                  <Badge className="bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px] uppercase font-bold font-mono">
+                    Live Verified
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                  @{tiktokAccountInfo.displayName?.toLowerCase().replace(/\s+/g, '')} • TikTok OAuth Synchronized
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Followers</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof tiktokAccountInfo.metrics?.followers === 'number' ? tiktokAccountInfo.metrics.followers.toLocaleString() : '0'}
+                </span>
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Total Likes</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof tiktokAccountInfo.metrics?.likes === 'number' ? tiktokAccountInfo.metrics.likes.toLocaleString() : '0'}
+                </span>
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider block">Public Videos</span>
+                <span className="text-lg font-bold text-foreground font-mono">
+                  {typeof tiktokAccountInfo.metrics?.videos === 'number' ? tiktokAccountInfo.metrics.videos.toLocaleString() : '0'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </StudioCard>
+      )}
 
       {/* Main Grid: Heatmap + Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Interactive Heatmap Matrix */}
-        <Card className="lg:col-span-2 p-6 md:p-8 rounded-3xl flex flex-col justify-between">
+        <StudioCard
+          cornerBrackets={true}
+          watermark={false}
+          className="lg:col-span-2 p-6 md:p-8 flex flex-col justify-between"
+        >
           <div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
@@ -507,7 +638,7 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
           <div className="mt-6 md:mt-4 bg-muted/20 border border-border rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-green-550 animate-ping" />
-              <div className="text-[11px] text-muted-foreground">
+              <div className="text-[11px] text-muted-foreground font-mono">
                 Currently tracking: <span className="font-bold text-foreground capitalize">{WEEK_DAYS[selectedCell.dayIndex]}</span> at <span className="font-bold text-foreground font-mono">{formatHour(selectedCell.hour)}</span>
               </div>
             </div>
@@ -515,7 +646,7 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
               CELL SCORE: {getEngagementValue(selectedCell.dayIndex, selectedCell.hour, activePlatform)}/100
             </span>
           </div>
-        </Card>
+        </StudioCard>
  
         {/* Selected Slot Strategy Briefings Sidebar */}
         <div>
@@ -527,25 +658,29 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="p-8 pb-7 border-pink-500/20 bg-gradient-to-b from-pink-500/[0.04] to-muted/20 rounded-3xl h-full flex flex-col justify-between">
+              <StudioCard
+                cornerBrackets={true}
+                watermark={true}
+                className="p-6 md:p-8 border-pink-500/20 bg-gradient-to-b from-pink-500/[0.04] to-card/60 h-full flex flex-col justify-between"
+              >
                 <div>
                   <h4 className="font-bold flex items-center justify-between border-b border-border/45 pb-3 mb-6 font-display text-sm text-foreground">
                     <span className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4 text-pink-550 dark:text-pink-400" />
                       Slot Breakdown
                     </span>
-                    <Badge variant="outline" className="text-[10px] bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20 font-bold uppercase">
+                    <Badge variant="outline" className="text-[10px] bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20 font-bold font-mono uppercase">
                       {selectedData.day}
                     </Badge>
                   </h4>
  
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="p-4 rounded-2xl bg-card border border-border space-y-1">
-                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider block">Local Peak Hour</span>
+                      <span className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-wider block">Local Peak Hour</span>
                       <div className="text-sm font-bold text-foreground font-mono italic">{selectedData.time}</div>
                     </div>
                     <div className="p-4 rounded-2xl bg-card border border-border space-y-1">
-                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider block">Availability Velocity</span>
+                      <span className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-wider block">Availability Velocity</span>
                       <div className="text-sm font-bold text-pink-600 dark:text-pink-400 flex items-center gap-1 font-mono italic">
                         <Zap className="h-3.5 w-3.5 fill-pink-600 dark:fill-pink-400 text-pink-600 dark:text-pink-400" />
                         {selectedData.engagement}%
@@ -555,8 +690,8 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
  
                   <div className="space-y-4 pt-1 bg-muted/40 p-5 rounded-2xl border border-border">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block font-sans">AI Strategy Proposal</span>
-                      <Badge className="text-[9px] py-0 px-2 rounded-full uppercase bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/25 font-bold">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground block font-sans">AI Strategy Proposal</span>
+                      <Badge className="text-[9px] py-0 px-2 rounded-full uppercase bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/25 font-mono font-bold">
                         {selectedData.recommendation.badge}
                       </Badge>
                     </div>
@@ -572,16 +707,16 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
                 <div className="pt-6 mt-6 border-t border-border space-y-3">
                   <Button
                     onClick={handleScheduleAction}
-                    className="w-full gap-2 rounded-xl h-11 text-sm bg-pink-600 dark:bg-pink-500 hover:bg-pink-700 dark:hover:bg-pink-600 text-white font-semibold cursor-pointer select-none"
+                    className="w-full gap-2 rounded-xl h-11 text-xs font-mono font-bold bg-pink-600 dark:bg-pink-500 hover:bg-pink-700 dark:hover:bg-pink-600 text-white cursor-pointer select-none"
                   >
-                    <Calendar className="h-4.5 w-4.5" />
+                    <Calendar className="h-4 w-4" />
                     <span>Schedule Draft for this Space</span>
                   </Button>
-                  <p className="text-[9px] text-zinc-500 text-center leading-normal">
+                  <p className="text-[9px] text-muted-foreground font-mono text-center leading-normal">
                     Pre-fills and inserts a creative placeholder slot matching this timezone into your content feed.
                   </p>
                 </div>
-              </Card>
+              </StudioCard>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -591,11 +726,12 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Interests & Demographics tag block */}
-        <Card className="p-8 rounded-3xl">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2 font-display">
-            <Target className="h-4.5 w-4.5 text-pink-500" />
-            Audience Interest Saturation
-          </h3>
+        <StudioCard
+          cornerBrackets={true}
+          watermark={true}
+          className="p-6 md:p-8"
+          title="Audience Interest Saturation"
+        >
           <div className="flex flex-wrap gap-3.5 mb-8">
             {[
               { tag: 'Graphic Design', weight: 'text-2xl font-bold text-zinc-100' },
@@ -611,11 +747,10 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
               <motion.span
                 key={item.tag}
                 whileHover={{ scale: 1.08 }}
-                className={`${item.weight} cursor-pointer hover:text-pink-500 transition-colors origin-left`}
+                className={`${item.weight} cursor-pointer hover:text-pink-500 transition-colors origin-left font-display`}
                 onClick={() => {
                   showToast(`Assigned assist topic query to: "${item.tag}"`);
                   onNavigate('ai');
-                  // Trigger simple query
                   localStorage.setItem('assistant_default_prompt', `Dissect the latest viral trends regarding the ${item.tag} niche for creators.`);
                 }}
               >
@@ -625,56 +760,83 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
           </div>
           
           <div className="p-5 rounded-2xl bg-muted/20 border border-border/60">
-            <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5">
-              <ArrowUpRight className="h-4.5 w-4.5 text-green-500" />
-              Growing Trend Spotlight: AI Tools
-            </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed text-left">
-              Your audience's engagement metrics with AI-enhanced content tags has spiked by 45% this week. Click the topic action below to execute AI Assistant analysis.
-            </p>
-            <Button 
-              variant="link" 
-              className="p-0 h-auto mt-4 text-xs font-bold text-pink-650 dark:text-pink-400 gap-1 select-none hover:underline shrink-0"
-              onClick={() => {
-                showToast('Launching AI Assistant audit...');
-                onNavigate('ai');
-                localStorage.setItem('assistant_default_prompt', 'Formulate a comprehensive, high-engagement narrative script format tailored to my AI Tools tag spike.');
-              }}
-            >
-              <span>View Topic Analysis</span> 
-              <ChevronRight className="h-3 w-3" />
-            </Button>
+            {posts.length > 0 ? (
+              <>
+                <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5 text-foreground">
+                  <ArrowUpRight className="h-4.5 w-4.5 text-emerald-400" />
+                  Active Content Topic Focus: {posts[0].platform.toUpperCase()}
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed text-left">
+                  Your recent scheduled draft "{posts[0].title}" targets upcoming audience engagement windows. Click below to analyze content distribution.
+                </p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto mt-4 text-xs font-mono font-bold text-pink-650 dark:text-pink-400 gap-1 select-none hover:underline shrink-0"
+                  onClick={() => {
+                    showToast('Launching AI Assistant audit...');
+                    onNavigate('ai');
+                    localStorage.setItem('assistant_default_prompt', `Analyze audience demand and structure an optimized hook for "${posts[0].title}".`);
+                  }}
+                >
+                  <span>Analyze Content Angle</span> 
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5 text-foreground">
+                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  Audience Baseline: 0 Posts Published
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed text-left">
+                  No live posts or video tags detected yet. Start drafting or schedule your first content slot to gather audience retention telemetry.
+                </p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto mt-4 text-xs font-mono font-bold text-pink-650 dark:text-pink-400 gap-1 select-none hover:underline shrink-0"
+                  onClick={() => {
+                    showToast('Generating launch blueprint...');
+                    onNavigate('ai');
+                    localStorage.setItem('assistant_default_prompt', 'Provide 3 high-impact content ideas to launch my channel and gain initial traction from zero subscribers.');
+                  }}
+                >
+                  <span>Brainstorm Launch Ideas (From 0)</span> 
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </>
+            )}
           </div>
-        </Card>
+        </StudioCard>
 
         {/* Heatmap Insights Guide */}
-        <Card className="p-8 flex flex-col justify-between rounded-3xl">
+        <StudioCard
+          cornerBrackets={true}
+          watermark={false}
+          className="p-6 md:p-8 flex flex-col justify-between"
+          title="Platform Heatmap Insights"
+        >
           <div>
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 font-display">
-              <Sparkles className="h-4.5 w-4.5 text-yellow-500" />
-              Platform Heatmap Insights
-            </h3>
             <ul className="space-y-4.5 text-xs">
               <li className="flex gap-4">
-                <Badge variant="outline" className="h-6 shrink-0 bg-red-500/10 dark:bg-red-500/20 border-red-500/20 text-red-600 dark:text-red-400 font-bold">YouTube</Badge>
+                <Badge variant="outline" className="h-6 shrink-0 bg-red-500/10 dark:bg-red-500/20 border-red-500/20 text-red-600 dark:text-red-400 font-mono font-bold">YouTube</Badge>
                 <p className="text-muted-foreground text-xs leading-relaxed text-left">
                   Optimal posting schedule is concentrated on Sunday & Tuesday evenings (7 PM - 9 PM) targeting deep-dive analytical view sessions.
                 </p>
               </li>
               <li className="flex gap-4">
-                <Badge variant="outline" className="h-6 shrink-0 bg-pink-500/10 dark:bg-pink-500/20 border-pink-500/20 text-pink-600 dark:text-pink-400 font-bold">Instagram</Badge>
+                <Badge variant="outline" className="h-6 shrink-0 bg-pink-500/10 dark:bg-pink-500/20 border-pink-500/20 text-pink-600 dark:text-pink-400 font-mono font-bold">Instagram</Badge>
                 <p className="text-muted-foreground text-xs leading-relaxed text-left">
                   Lunchtime activity spikes across mid-week indices represent perfect opportunistic slots for visually-arresting lifestyle updates.
                 </p>
               </li>
               <li className="flex gap-4">
-                <Badge variant="outline" className="h-6 shrink-0 bg-cyan-500/10 dark:bg-cyan-500/20 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold">TikTok</Badge>
+                <Badge variant="outline" className="h-6 shrink-0 bg-cyan-500/10 dark:bg-cyan-500/20 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-mono font-bold">TikTok</Badge>
                 <p className="text-muted-foreground text-xs leading-relaxed text-left">
                   Late-night scrolling activity between Mon-Fri represents highly responsive, lower competition intervals for casual Reels.
                 </p>
               </li>
               <li className="flex gap-4">
-                <Badge variant="outline" className="h-6 shrink-0 bg-sky-500/10 dark:bg-sky-500/20 border-sky-500/20 text-sky-600 dark:text-sky-400 font-bold">X</Badge>
+                <Badge variant="outline" className="h-6 shrink-0 bg-sky-500/10 dark:bg-sky-500/20 border-sky-500/20 text-sky-600 dark:text-sky-400 font-mono font-bold">X</Badge>
                 <p className="text-muted-foreground text-xs leading-relaxed text-left">
                   Professional workflow schedules between 9 AM and 4 PM weekdays show a high CTR index but require deep intellectual threads to stand out.
                 </p>
@@ -685,13 +847,13 @@ export default function AudienceView({ posts, setPosts, openNewPostModal, showTo
           <div className="bg-pink-500/5 dark:bg-pink-500/10 border border-pink-500/15 dark:border-pink-500/30 rounded-2xl p-4 mt-6 flex gap-3 items-start">
             <Zap className="h-4.5 w-4.5 text-pink-500 shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-bold text-xs text-foreground">Aggregate Prime Active Slot</h4>
+              <h4 className="font-mono font-bold text-xs text-foreground">Aggregate Prime Active Slot</h4>
               <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 text-left">
                 Across all channels, your unified active subscriber peak occurs on **Tuesdays at 7:00 PM** where composite user velocity hits an active 94% ceiling.
               </p>
             </div>
           </div>
-        </Card>
+        </StudioCard>
 
       </div>
     </div>

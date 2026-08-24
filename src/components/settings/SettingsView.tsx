@@ -18,7 +18,8 @@ import {
   ShoppingBag,
   Briefcase,
   Check,
-  Plus
+  Plus,
+  ArrowRight
 } from 'lucide-react';
 
 // Brand-specific premium SVG assets for SettingsView
@@ -80,6 +81,7 @@ interface SettingsViewProps {
     plan: string;
     avatar: string;
   };
+  userId?: string;
   setUserProfile: React.Dispatch<React.SetStateAction<any>>;
   connectedPlatforms: string[];
   setConnectedPlatforms: React.Dispatch<React.SetStateAction<string[]>>;
@@ -95,6 +97,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({
   userProfile,
+  userId,
   setUserProfile,
   connectedPlatforms,
   setConnectedPlatforms,
@@ -135,17 +138,139 @@ export default function SettingsView({
     });
   };
 
-  const handlePlatformToggle = (id: string, name: string) => {
-    setConnectedPlatforms(prev => {
-      const isConnected = prev.includes(id);
-      if (isConnected) {
-        showToast(`Disconnected your ${name} channel feeds.`, 'info');
-        return prev.filter(p => p !== id);
-      } else {
-        showToast(`Successfully linked your ${name} account metrics.`, 'success');
-        return [...prev, id];
+  const [popupBlockedUrl, setPopupBlockedUrl] = useState<string | null>(null);
+
+  const handlePlatformToggle = async (id: string, name: string) => {
+    const isConnected = connectedPlatforms.includes(id);
+    if (isConnected) {
+      showToast(`Disconnected your ${name} channel feeds.`, 'info');
+      setConnectedPlatforms(prev => prev.filter(p => p !== id));
+      setPopupBlockedUrl(null);
+      return;
+    }
+    setPopupBlockedUrl(null);
+
+    // YouTube real OAuth flow trigger in Settings Panel
+    if (id === 'youtube') {
+      try {
+        const currentUid = userId || `user_${Date.now()}`;
+        showToast('Requesting Google OAuth authorization...', 'info');
+        const res = await fetch(`/api/auth/google/url?uid=${encodeURIComponent(currentUid)}`);
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "OAuth route not configured.");
+        }
+
+        if (!data.url) {
+          throw new Error("Invalid response from server (missing auth URL).");
+        }
+
+        const sessionId = data.sessionId || currentUid;
+
+        // Background polling to capture completion
+        const pollTimer = setInterval(async () => {
+          try {
+            const check = await fetch(`/api/auth/google/session?uid=${encodeURIComponent(sessionId)}`);
+            const session = await check.json();
+            if (session.completed) {
+              clearInterval(pollTimer);
+              setPopupBlockedUrl(null);
+              
+              const payload = {
+                type: 'OAUTH_AUTH_SUCCESS',
+                provider: 'youtube',
+                tokens: session.tokens,
+                youtubeStats: session.youtubeStats
+              };
+              localStorage.setItem('CREATOR_OS_AUTH_COMPLETED', JSON.stringify(payload));
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'CREATOR_OS_AUTH_COMPLETED',
+                newValue: JSON.stringify(payload)
+              }));
+            }
+          } catch (e) {}
+        }, 1500);
+
+        setTimeout(() => clearInterval(pollTimer), 120000);
+
+        const popup = window.open(data.url, 'youtube_oauth', 'width=600,height=720,status=no,resizable=yes');
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          setPopupBlockedUrl(data.url);
+          showToast('Popup blocked. Please click the button to authorize.', 'info');
+        } else {
+          showToast('Consent prompt opened. Securely authorize with Google.', 'info');
+        }
+      } catch (err: any) {
+        console.error("YouTube settings toggle error:", err);
+        showToast(err.message || "Failed to initialize YouTube connection.", 'error');
       }
-    });
+      return;
+    }
+
+    // TikTok real OAuth flow trigger in Settings Panel
+    if (id === 'tiktok') {
+      try {
+        const currentUid = userId || `user_${Date.now()}`;
+        showToast('Requesting TikTok OAuth authorization...', 'info');
+        const res = await fetch(`/api/auth/tiktok/url?uid=${encodeURIComponent(currentUid)}`);
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "TikTok OAuth route not configured.");
+        }
+
+        if (!data.url) {
+          throw new Error("Invalid response from server (missing auth URL).");
+        }
+
+        const sessionId = data.sessionId || currentUid;
+
+        // Background polling to capture completion
+        const pollTimer = setInterval(async () => {
+          try {
+            const check = await fetch(`/api/auth/tiktok/session?uid=${encodeURIComponent(sessionId)}`);
+            const session = await check.json();
+            if (session.completed) {
+              clearInterval(pollTimer);
+              setPopupBlockedUrl(null);
+              
+              const payload = {
+                type: 'OAUTH_AUTH_SUCCESS',
+                provider: 'tiktok',
+                tokens: session.tokens,
+                tiktokStats: session.tiktokStats
+              };
+              localStorage.setItem('CREATOR_OS_AUTH_COMPLETED', JSON.stringify(payload));
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'CREATOR_OS_AUTH_COMPLETED',
+                newValue: JSON.stringify(payload)
+              }));
+            }
+          } catch (e) {}
+        }, 1500);
+
+        setTimeout(() => clearInterval(pollTimer), 120000);
+
+        const popup = window.open(data.url, 'tiktok_oauth', 'width=600,height=720,status=no,resizable=yes');
+        
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          setPopupBlockedUrl(data.url);
+          showToast('Popup blocked. Please click the button to authorize.', 'info');
+        } else {
+          showToast('Consent prompt opened. Securely authorize with TikTok.', 'info');
+        }
+      } catch (err: any) {
+        console.error("TikTok settings toggle error:", err);
+        showToast(err.message || "Failed to initialize TikTok connection.", 'error');
+      }
+      return;
+    }
+
+    // Standard simulation helper for other channels
+    showToast(`Successfully linked your ${name} account metrics.`, 'success');
+    setConnectedPlatforms(prev => [...prev, id]);
   };
 
   const listConfigPlatforms = [
@@ -235,6 +360,25 @@ export default function SettingsView({
             <LinkIcon className="h-5 w-5 text-slate-500" />
             <h2 className="text-xl font-bold font-display text-foreground">Connected Platforms</h2>
           </div>
+
+          {popupBlockedUrl && (
+            <div className="bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-indigo-400 shrink-0" />
+                <span>Browser popup was blocked. Click to open Google Authorization:</span>
+              </div>
+              <a
+                href={popupBlockedUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-xs shrink-0 inline-flex items-center gap-1.5 transition-colors"
+              >
+                Open Google Consent
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {listConfigPlatforms.map((p) => {
               const isConnected = connectedPlatforms.includes(p.id);

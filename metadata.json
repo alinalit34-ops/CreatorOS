@@ -1,5 +1,8 @@
 {
   "name": "Creator OS",
   "description": "A unified workspace for content creators to manage planning, analytics, monetization, and audience insights with AI-driven intelligence.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

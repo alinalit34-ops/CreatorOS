@@ -4,6 +4,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import StudioPlaque from '../brand/StudioPlaque';
+import StudioCard from '../brand/StudioCard';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -77,45 +79,54 @@ export default function CreatorCalendar({ posts, setPosts, openNewPostModal, sho
   };
 
   return (
-    <div className="space-y-8 pb-12 select-none text-left">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold mb-2">Content Calendar</h1>
-          <p className="text-muted-foreground text-sm">Plan and manage your upcoming posts across all platforms.</p>
-        </div>
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center bg-muted/40 rounded-full p-1 border border-border">
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 hover:bg-zinc-200 dark:hover:bg-zinc-800" onClick={prevMonth}>
-              <ChevronLeft className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
-            </Button>
-            <span className="px-4 font-semibold min-w-[130px] text-center text-xs text-zinc-800 dark:text-zinc-200">
-              {format(currentDate, 'MMMM yyyy')}
-            </span>
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 hover:bg-zinc-200 dark:hover:bg-zinc-800" onClick={nextMonth}>
-              <ChevronRight className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+    <div className="space-y-8 pb-12 select-none text-left font-sans">
+      {/* Unified Studio Plaque Header */}
+      <StudioPlaque
+        nodeId="NODE: 03"
+        category="DISTRIBUTION TIMELINE"
+        status="SCHEDULE SYNCED"
+        statusColor="indigo"
+        title="Content Calendar"
+        subtitle="Multi-platform release scheduling, draft queues, and algorithmic pacing."
+        action={
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center bg-card/60 rounded-xl p-1 border border-border/80">
+              <Button variant="ghost" size="icon" className="rounded-lg h-7 w-7 hover:bg-muted" onClick={prevMonth}>
+                <ChevronLeft className="h-4 w-4 text-foreground" />
+              </Button>
+              <span className="px-3 font-mono font-bold min-w-[120px] text-center text-xs text-foreground">
+                {format(currentDate, 'MMMM yyyy')}
+              </span>
+              <Button variant="ghost" size="icon" className="rounded-lg h-7 w-7 hover:bg-muted" onClick={nextMonth}>
+                <ChevronRight className="h-4 w-4 text-foreground" />
+              </Button>
+            </div>
+            <Button 
+              onClick={handleCreatePostForSelectedDate}
+              className="rounded-xl gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-mono font-bold px-4 h-9 text-xs cursor-pointer shadow-md shadow-primary/20"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>+ SCHEDULE SLOT</span>
             </Button>
           </div>
-          <Button 
-            onClick={handleCreatePostForSelectedDate}
-            className="rounded-full gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-sm cursor-pointer shadow-lg shadow-blue-500/10"
-          >
-            <Plus className="h-4 w-4" />
-            Schedule Post
-          </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Calendar Grid */}
-        <Card className="lg:col-span-3 p-6 rounded-3xl border-border/60 bg-muted/10">
-          <div className="grid grid-cols-7 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 py-2">
+        <StudioCard
+          cornerBrackets={true}
+          watermark={false}
+          className="lg:col-span-3 p-5"
+        >
+          <div className="grid grid-cols-7 mb-3">
+            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+              <div key={day} className="text-center text-[10px] font-mono font-bold tracking-widest text-muted-foreground py-1">
                 {day}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-px bg-border/40 border border-border/40 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="grid grid-cols-7 gap-px bg-border/60 border border-border/70 rounded-xl overflow-hidden shadow-sm">
             {/* Padding for start of month */}
             {Array.from({ length: monthStart.getDay() }).map((_, i) => (
               <div key={`pad-${i}`} className="aspect-square bg-muted/10" />
@@ -129,39 +140,36 @@ export default function CreatorCalendar({ posts, setPosts, openNewPostModal, sho
               return (
                 <div 
                   key={day.toString()} 
-                  className={`aspect-square bg-card/60 p-2.5 relative cursor-pointer hover:bg-muted/30 transition-all ${
-                    isSelected ? 'ring-2 ring-blue-50 z-10 bg-blue-500/[0.02]' : ''
+                  className={`aspect-square bg-card/70 p-2 relative cursor-pointer hover:bg-muted/30 transition-all ${
+                    isSelected ? 'ring-1 ring-primary z-10 bg-primary/5' : ''
                   }`}
                   onClick={() => setSelectedDate(day)}
                 >
-                  <span className={`text-xs font-semibold w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  <span className={`text-[11px] font-mono font-bold w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
                     isToday 
-                      ? 'bg-blue-600 text-white font-bold' 
+                      ? 'bg-primary text-primary-foreground font-bold' 
                       : isSelected 
-                        ? 'text-blue-500' 
-                        : 'text-foreground'
+                        ? 'text-primary font-bold' 
+                        : 'text-foreground/80'
                   }`}>
                     {format(day, 'd')}
                   </span>
                   
-                  <div className="mt-2 flex flex-wrap gap-1 max-h-12 overflow-y-auto">
+                  <div className="mt-1.5 flex flex-wrap gap-1 max-h-10 overflow-y-auto">
                     {dayPosts.map(post => {
-                      const Icon = PLATFORM_ICONS[post.platform as keyof typeof PLATFORM_ICONS] || CalendarIcon;
                       return (
                         <div 
                           key={post.id} 
                           className={`w-2 h-2 rounded-full cursor-pointer hover:scale-125 transition-transform ${
                             post.platform === 'youtube' 
-                              ? 'bg-[#FF0000]' 
+                              ? 'bg-red-500' 
                               : post.platform === 'instagram' 
-                                ? 'bg-[#E4405F]' 
+                                ? 'bg-pink-500' 
                                 : post.platform === 'tiktok'
-                                  ? 'bg-[#00F2FE]'
+                                  ? 'bg-cyan-400'
                                   : post.platform === 'twitter'
-                                    ? 'bg-[#1DA1F2]'
-                                    : post.platform === 'gumroad'
-                                      ? 'bg-emerald-500'
-                                      : 'bg-blue-500'
+                                    ? 'bg-sky-400'
+                                    : 'bg-primary'
                           }`}
                           title={post.title} 
                         />
@@ -172,35 +180,40 @@ export default function CreatorCalendar({ posts, setPosts, openNewPostModal, sho
               );
             })}
           </div>
-        </Card>
+        </StudioCard>
 
         {/* Day Details */}
         <div className="space-y-6">
-          <Card className="p-6 rounded-3xl border-border/60 bg-muted/10">
-            <h3 className="font-bold flex items-center justify-between border-b border-border/45 pb-3 mb-4 text-sm text-foreground font-display">
-              <span>{format(selectedDate, 'EEEE, MMM d')}</span>
-              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/10">
-                {getPostsForDay(selectedDate).length} Posts
-              </Badge>
-            </h3>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+          <StudioCard
+            cornerBrackets={true}
+            watermark={true}
+            className="p-5"
+            title={
+              <span className="font-display">{format(selectedDate, 'EEEE, MMM d')}</span>
+            }
+            headerAction={
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">
+                {getPostsForDay(selectedDate).length} POSTS
+              </span>
+            }
+          >
+            <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
               {getPostsForDay(selectedDate).length > 0 ? (
                 getPostsForDay(selectedDate).map(post => {
                   const Icon = PLATFORM_ICONS[post.platform as keyof typeof PLATFORM_ICONS] || CalendarIcon;
                   const isMenuOpen = activeMenuPost === post.id;
                   return (
-                    <div key={post.id} className="p-4 rounded-2xl bg-card border border-border space-y-3 relative group hover:border-blue-500/50 transition-colors">
+                    <div key={post.id} className="p-3.5 rounded-xl bg-card/80 border border-border space-y-2.5 relative group hover:border-primary/50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 capitalize text-xs text-muted-foreground">
-                          <Icon className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 capitalize text-xs text-muted-foreground font-mono">
+                          <Icon className="h-3.5 w-3.5 text-primary" />
                           <span>{post.platform}</span>
                         </div>
                         <div className="relative">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                            className="h-6 w-6 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => setActiveMenuPost(isMenuOpen ? null : post.id)}
                           >
                             <MoreVertical className="h-3.5 w-3.5" />
@@ -214,21 +227,21 @@ export default function CreatorCalendar({ posts, setPosts, openNewPostModal, sho
                                   initial={{ opacity: 0, scale: 0.95 }}
                                   animate={{ opacity: 1, scale: 1 }}
                                   exit={{ opacity: 0, scale: 0.95 }}
-                                  className="absolute right-0 mt-1 w-32 bg-popover border border-border rounded-xl shadow-xl p-1 z-50 text-xs"
+                                  className="absolute right-0 mt-1 w-32 bg-popover border border-border rounded-xl shadow-xl p-1 z-50 text-xs font-mono"
                                 >
                                   <button
                                     onClick={() => togglePostStatus(post.id, post.status)}
-                                    className="w-full text-left px-3 py-2 rounded-lg text-foreground hover:bg-muted flex items-center gap-1.5"
+                                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-foreground hover:bg-muted flex items-center gap-1.5"
                                   >
-                                    <CheckCircle className="h-3.5 w-3.5" />
-                                    <span>Cycle status</span>
+                                    <CheckCircle className="h-3 w-3" />
+                                    <span>CYCLE STATUS</span>
                                   </button>
                                   <button
                                     onClick={() => handleDeletePost(post.id, post.title)}
-                                    className="w-full text-left px-3 py-2 rounded-lg text-red-500 hover:bg-red-500/10 flex items-center gap-1.5 font-medium border-t border-border mt-1"
+                                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 flex items-center gap-1.5 font-bold border-t border-border mt-1"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    <span>Delete slot</span>
+                                    <Trash2 className="h-3 w-3" />
+                                    <span>DELETE</span>
                                   </button>
                                 </motion.div>
                               </>
@@ -237,60 +250,64 @@ export default function CreatorCalendar({ posts, setPosts, openNewPostModal, sho
                         </div>
                       </div>
                       <h4 className="text-xs font-semibold leading-relaxed text-foreground">{post.title}</h4>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-[9px] uppercase px-1.5 h-4.5 rounded font-mono bg-muted/40 border-border">
+                      <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono bg-muted/60 text-muted-foreground border border-border/50">
                           {post.status}
-                        </Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono">10:00 AM</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">10:00 AM</span>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="py-12 text-center space-y-4">
-                  <div className="w-11 h-11 rounded-full bg-muted/40 border border-border/30 flex items-center justify-center mx-auto">
-                    <Plus className="h-5 w-5 text-muted-foreground" />
+                <div className="py-8 text-center space-y-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-center mx-auto text-muted-foreground">
+                    <Plus className="h-4 w-4" />
                   </div>
-                  <p className="text-xs text-muted-foreground">No content scheduled for this day.</p>
+                  <p className="text-xs text-muted-foreground">No content scheduled for this slot.</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="rounded-full text-xs font-bold border-border hover:bg-muted text-foreground cursor-pointer"
+                    className="rounded-xl text-xs font-mono font-bold border-border hover:bg-muted text-foreground cursor-pointer h-7"
                     onClick={handleCreatePostForSelectedDate}
                   >
-                    Schedule Now
+                    + ADD ENTRY
                   </Button>
                 </div>
               )}
             </div>
-          </Card>
+          </StudioCard>
 
-          <Card className="p-6 bg-blue-500/[0.04] border border-blue-500/15 rounded-3xl">
-            <h4 className="text-xs font-bold mb-2.5 flex items-center gap-2 text-foreground font-display">
-              <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
-              AI Prompt Generators
+          <StudioCard
+            cornerBrackets={true}
+            watermark={false}
+            className="p-5"
+          >
+            <h4 className="text-xs font-bold mb-2 flex items-center gap-2 text-foreground font-display">
+              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+              Instant Spark Drafts
             </h4>
-            <p className="text-xs text-muted-foreground mb-4">Click any spark topic to prepopulate and link a calendar draft instantly:</p>
+            <p className="text-xs text-muted-foreground mb-3">Pre-fill high-converting launch topics:</p>
             <ul className="space-y-2">
               {[
-                { idea: 'Behind the scenes layout setup', plat: 'instagram' },
-                { idea: 'Q&A about mobile utility design', plat: 'youtube' },
-                { idea: 'Micro interaction guidelines checklist', plat: 'twitter' }
+                { idea: 'Behind the scenes studio workflow breakdown', plat: 'instagram' },
+                { idea: 'Deep-dive critique on minimalist web systems', plat: 'youtube' },
+                { idea: 'Micro-interaction design heuristics checklist', plat: 'twitter' }
               ].map((rec, i) => (
                 <li 
                   key={i} 
-                  className="text-xs p-2.5 rounded-xl bg-background hover:bg-blue-500/[0.02] border border-border hover:border-blue-500/50 cursor-pointer transition-all flex items-start gap-2 group"
+                  className="text-xs p-2.5 rounded-xl bg-card hover:bg-muted/40 border border-border/70 hover:border-primary/40 cursor-pointer transition-all flex items-start gap-2 group"
                   onClick={() => {
                     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
                     openNewPostModal(rec.idea, rec.plat as Platform, formattedDate);
                   }}
                 >
-                  <Sparkles className="h-3 w-3 mt-0.5 text-blue-500 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
-                  <span className="text-[11px] leading-relaxed text-muted-foreground font-medium group-hover:text-foreground transition-colors">{rec.idea}</span>
+                  <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-[11px] leading-relaxed text-muted-foreground group-hover:text-foreground transition-colors">{rec.idea}</span>
                 </li>
               ))}
             </ul>
-          </Card>
+          </StudioCard>
         </div>
       </div>
     </div>

@@ -15,6 +15,8 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import StudioPlaque from '../brand/StudioPlaque';
+import StudioCard from '../brand/StudioCard';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -95,20 +97,37 @@ const PLATFORM_BRAND_COLORS: Record<string, { text: string; statAccent: string; 
 };
 
 export default function MonetizationView({ showToast }: { showToast: (msg: string, type?: 'success' | 'info' | 'error') => void }) {
-  // Localized state for dynamic income streams
-  const [incomeStreams, setIncomeStreams] = useState([
-    { name: 'AdSense Revenue', platform: 'youtube', type: 'Platform Ads', amount: 4500, growth: '+7%' },
-    { name: 'Design Assets Sale', platform: 'gumroad', type: 'Product Sales', amount: 2800, growth: '+14%' },
-    { name: 'Substack Pro Subscriptions', platform: 'convertkit', type: 'Memberships', amount: 2150, growth: '+3%' },
-    { name: 'TechCo Sponsorship', platform: 'youtube', type: 'Sponsorships', amount: 3000, growth: '+0%' }
-  ]);
+  // Localized state for dynamic income streams with localStorage persistence
+  const [incomeStreams, setIncomeStreams] = useState<Array<{
+    name: string;
+    platform: string;
+    type: string;
+    amount: number;
+    growth: string;
+  }>>(() => {
+    try {
+      const saved = localStorage.getItem('creator_os_income_streams');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Dynamic sponsor pipeline
-  const [pipeline, setPipeline] = useState([
-    { id: '1', brand: 'TechCo', status: 'Signed', value: 3000, date: 'Jun 15' },
-    { id: '2', brand: 'Skillshare', status: 'Negotiating', value: 2500, date: 'Jun 28' },
-    { id: '3', brand: 'NordVPN', status: 'Briefing', value: 1800, date: 'Jul 04' }
-  ]);
+  // Dynamic sponsor pipeline with localStorage persistence
+  const [pipeline, setPipeline] = useState<Array<{
+    id: string;
+    brand: string;
+    status: string;
+    value: number;
+    date: string;
+  }>>(() => {
+    try {
+      const saved = localStorage.getItem('creator_os_pipeline_deals');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Modal states
   const [isAddStreamOpen, setIsAddStreamOpen] = useState(false);
@@ -153,10 +172,18 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
       platform: streamPlatform,
       type: streamType,
       amount: value,
-      growth: '+10%'
+      growth: '+0%'
     };
 
-    setIncomeStreams(prev => [...prev, nextStream]);
+    setIncomeStreams(prev => {
+      const updated = [...prev, nextStream];
+      try {
+        localStorage.setItem('creator_os_income_streams', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save income streams", err);
+      }
+      return updated;
+    });
     setIsAddStreamOpen(false);
     setStreamName('');
     setStreamAmount('');
@@ -181,10 +208,19 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
       brand: dealBrand.trim(),
       status: dealStatus,
       value: value,
-      date: dealDate || 'Jul 15'
+      date: dealDate || 'Aug 2026'
     };
 
-    setPipeline(prev => [...prev, nextDeal]);
+    setPipeline(prev => {
+      const updated = [...prev, nextDeal];
+      try {
+        localStorage.setItem('creator_os_pipeline_deals', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save deals", err);
+      }
+      return updated;
+    });
+    setIsPipelineOpen(false);
     setDealBrand('');
     setDealValue('');
     setDealDate('');
@@ -198,31 +234,59 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
       Signed: 'Briefing'
     };
     const nextStatus = nextMap[current] || 'Briefing';
-    setPipeline(prev => prev.map(d => d.id === id ? { ...d, status: nextStatus } : d));
+    setPipeline(prev => {
+      const updated = prev.map(d => d.id === id ? { ...d, status: nextStatus } : d);
+      try {
+        localStorage.setItem('creator_os_pipeline_deals', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to update deals", err);
+      }
+      return updated;
+    });
     showToast(`Updated deal to: ${nextStatus}`);
   };
 
   const handleRemoveDeal = (id: string, brand: string) => {
-    setPipeline(prev => prev.filter(d => d.id !== id));
+    setPipeline(prev => {
+      const updated = prev.filter(d => d.id !== id);
+      try {
+        localStorage.setItem('creator_os_pipeline_deals', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to remove deal", err);
+      }
+      return updated;
+    });
     showToast(`Removed sponsorship entry for ${brand}.`, 'info');
   };
 
   return (
-    <div className="space-y-8 pb-12 select-none text-left">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold mb-2">Monetization</h1>
-          <p className="text-muted-foreground text-sm">Track your dynamic income streams and brand pipeline value.</p>
-        </div>
-        <Button onClick={() => setIsAddStreamOpen(true)} className="rounded-full gap-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 dark:text-zinc-950 font-bold px-5 h-10 text-sm cursor-pointer shadow-lg shadow-amber-500/10">
-          <Plus className="h-4.5 w-4.5 text-zinc-950" />
-          <span>Add Income Stream</span>
-        </Button>
-      </header>
+    <div className="space-y-8 pb-12 select-none text-left font-sans">
+      {/* Unified Studio Plaque Header */}
+      <StudioPlaque
+        nodeId="NODE: 02"
+        category="CAPITAL & MONETIZATION"
+        status="REVENUE ACTIVE"
+        statusColor="amber"
+        title="Monetization"
+        subtitle="Multi-stream revenue tracking, deal pipeline valuation, and rate curves."
+        action={
+          <Button 
+            onClick={() => setIsAddStreamOpen(true)} 
+            className="rounded-xl gap-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-mono font-bold px-4 h-9 text-xs cursor-pointer shadow-lg shadow-amber-500/10"
+          >
+            <Plus className="h-4 w-4 text-zinc-950 stroke-[3]" />
+            <span>NEW REVENUE STREAM</span>
+          </Button>
+        }
+      />
  
       {/* Revenue Hero */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 p-8 bg-gradient-to-br from-amber-500/[0.04] to-amber-500/[0.01] border border-amber-500/15 text-foreground relative overflow-hidden rounded-3xl shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <StudioCard
+          cornerBrackets={true}
+          watermark={true}
+          className="lg:col-span-2 p-6 sm:p-8 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-card/60 border-amber-500/20 text-foreground relative overflow-hidden shadow-lg shadow-amber-500/5"
+        >
           <div className="absolute top-0 right-0 w-full h-full opacity-30 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={incomeStreams}>
@@ -232,46 +296,54 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-650 dark:text-amber-400">Gross Revenue (Monthly Estimate)</span>
-              <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold">+12.5% vs MTD</Badge>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400">PROJECTED MONTHLY REVENUE</span>
+              {totalRevenue > 0 ? (
+                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-mono font-bold">+12.5% MTD</span>
+              ) : (
+                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[9px] font-mono font-bold">$0.00 LOGGED / NO ACTIVE STREAMS</span>
+              )}
             </div>
-            <div className="text-6xl sm:text-7xl font-display font-extrabold mb-8 text-foreground">${totalRevenue.toLocaleString()}</div>
+            <div className="text-5xl sm:text-7xl font-display font-black tracking-tight mb-8 text-foreground">${totalRevenue.toLocaleString()}</div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-amber-500/20">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-amber-500/20">
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider block text-zinc-500 dark:text-zinc-400">Sponsorships</span>
-                <div className="text-xl font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Sponsorships').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
+                <span className="text-[9px] uppercase font-mono font-bold tracking-wider block text-muted-foreground">Sponsorships</span>
+                <div className="text-lg font-mono font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Sponsorships').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider block text-zinc-500 dark:text-zinc-400">Product Sales</span>
-                <div className="text-xl font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Product Sales').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
+                <span className="text-[9px] uppercase font-mono font-bold tracking-wider block text-muted-foreground">Product Sales</span>
+                <div className="text-lg font-mono font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Product Sales').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider block text-zinc-500 dark:text-zinc-400">Memberships</span>
-                <div className="text-xl font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Memberships').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
+                <span className="text-[9px] uppercase font-mono font-bold tracking-wider block text-muted-foreground">Memberships</span>
+                <div className="text-lg font-mono font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Memberships').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider block text-zinc-500 dark:text-zinc-400">Platform Ads</span>
-                <div className="text-xl font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Platform Ads').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
+                <span className="text-[9px] uppercase font-mono font-bold tracking-wider block text-muted-foreground">Platform Ads</span>
+                <div className="text-lg font-mono font-bold text-foreground">${incomeStreams.filter(s => s.type === 'Platform Ads').reduce((a,c)=>a+c.amount, 0).toLocaleString()}</div>
               </div>
             </div>
           </div>
-        </Card>
+        </StudioCard>
 
         {/* Breakdown Donut */}
-        <Card className="p-8 flex flex-col items-center justify-center text-center rounded-3xl">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-6 font-display">Revenue Allocation</h3>
-          <div className="h-[180px] w-full flex items-center justify-center relative">
+        <StudioCard
+          cornerBrackets={true}
+          watermark={false}
+          className="flex flex-col items-center justify-center text-center"
+        >
+          <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground mb-4 font-display">Revenue Allocation</h3>
+          <div className="h-[170px] w-full flex items-center justify-center relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={incomeStreams}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={75}
-                  paddingAngle={5}
+                  innerRadius={50}
+                  outerRadius={70}
+                  paddingAngle={4}
                   dataKey="amount"
                 >
                   {incomeStreams.map((entry, index) => (
@@ -279,125 +351,179 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', fontFamily: 'monospace' }}
                   itemStyle={{ fontSize: 11, color: '#fff' }}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute flex flex-col justify-center">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Streams</span>
-              <span className="text-xl font-bold font-display text-foreground">{incomeStreams.length}</span>
+              <span className="text-[9px] font-mono uppercase font-bold text-muted-foreground tracking-wider">Streams</span>
+              <span className="text-lg font-mono font-bold text-foreground">{incomeStreams.length}</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-6 w-full pt-4 border-t border-border">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-4 w-full pt-4 border-t border-border/50">
             {incomeStreams.map((source, i) => (
               <div key={source.name} className="flex items-center gap-2 text-xs text-left">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: AMBER_PALETTE[i % AMBER_PALETTE.length] }} />
-                <span className="text-zinc-400 truncate font-medium">{source.name}</span>
+                <span className="text-muted-foreground truncate text-[11px] font-mono">{source.name}</span>
               </div>
             ))}
           </div>
-        </Card>
+        </StudioCard>
       </div>
  
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Income Streams Ledger */}
-        <Card className="p-8 rounded-3xl">
-          <h3 className="text-xl font-bold mb-8 font-display">Income Streams Ledger</h3>
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
-            {incomeStreams.map((source) => {
-              const Icon = PLATFORM_ICONS[source.platform as keyof typeof PLATFORM_ICONS] || Briefcase;
-              const brand = PLATFORM_BRAND_COLORS[source.platform as keyof typeof PLATFORM_BRAND_COLORS];
-              return (
-                <div 
-                  key={source.name} 
-                  className={`flex items-center justify-between p-4.5 rounded-2xl bg-muted/20 border transition-all cursor-pointer group hover:bg-muted/40 ${
-                    brand ? brand.borderSoft : 'border-border/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                      brand ? `${brand.bgSoft} ${brand.borderSoft}` : 'bg-card border-border'
-                    }`}>
-                      <Icon className={`h-5 w-5 ${brand ? brand.text : 'text-foreground'}`} />
+        <StudioCard
+          cornerBrackets={true}
+          watermark={false}
+          title="Income Streams Ledger"
+          headerAction={
+            <span className="text-[10px] font-mono font-bold text-muted-foreground">{incomeStreams.length} ACTIVE STREAMS</span>
+          }
+        >
+          {incomeStreams.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-3">
+              <DollarSign className="h-8 w-8 text-amber-500/60 mx-auto" />
+              <div>
+                <h4 className="text-xs font-mono font-bold text-foreground">No Income Streams Recorded</h4>
+                <p className="text-[11px] text-muted-foreground mt-1 max-w-sm mx-auto font-sans">
+                  Revenue is currently at $0.00. Add your digital products, AdSense payouts, or newsletter subscriptions to begin tracking earnings.
+                </p>
+              </div>
+              <Button
+                onClick={() => setIsAddStreamOpen(true)}
+                size="sm"
+                className="rounded-xl gap-1.5 text-xs font-mono font-bold bg-amber-400 hover:bg-amber-300 text-zinc-950 h-8 px-3 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>LOG INCOME STREAM</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {incomeStreams.map((source) => {
+                const Icon = PLATFORM_ICONS[source.platform as keyof typeof PLATFORM_ICONS] || Briefcase;
+                return (
+                  <div 
+                    key={source.name} 
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border/70 transition-all cursor-pointer group hover:border-amber-500/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-muted/40 border border-border/80 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4 text-foreground" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-xs text-foreground group-hover:text-amber-400 transition-colors font-mono">{source.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-muted text-muted-foreground">{source.type}</span>
+                          <span className="text-[9px] uppercase font-mono font-bold text-muted-foreground">{source.platform}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-sm group-hover:text-amber-500 transition-colors text-foreground">{source.name}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[9px] uppercase font-mono py-0">{source.type}</Badge>
-                        <span className={`text-[9px] uppercase font-mono font-bold ${brand ? brand.text : 'text-[#A1A1AA]'}`}>{source.platform}</span>
+                    <div className="text-right">
+                      <div className="font-mono font-bold text-xs text-foreground">${source.amount.toLocaleString()}</div>
+                      <div className="text-[10px] text-emerald-400 flex items-center justify-end gap-1 font-bold font-mono">
+                        <TrendingUp className="h-3 w-3" />
+                        {source.growth}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`font-bold text-sm ${brand ? brand.text : 'text-foreground'}`}>${source.amount.toLocaleString()}</div>
-                    <div className="text-[10px] text-green-500 flex items-center justify-end gap-1 font-bold font-mono">
-                      <TrendingUp className="h-3 w-3" />
-                      {source.growth}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+                );
+              })}
+            </div>
+          )}
+        </StudioCard>
  
         {/* Active Sponsorship Board */}
-        <Card className="p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold font-display">Brand Sponsorship Board</h3>
-            <span className="text-[10px] font-mono font-bold text-amber-500 dark:text-amber-400">PIPELINE: ${activeSponsorshipsSum.toLocaleString()}</span>
-          </div>
-          
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
-            {pipeline.map((deal) => (
-              <div 
-                key={deal.brand} 
-                className="flex items-center justify-between p-4.5 rounded-2xl bg-muted/20 border border-border/60 hover:bg-muted/40 transition-all cursor-pointer group"
-                onClick={() => promoteDealStatus(deal.id, deal.status)}
-                title="Click to advance status"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-sm text-amber-600 dark:text-amber-400 shrink-0 font-display">
-                    {deal.brand[0]}
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-bold text-sm text-foreground group-hover:text-amber-500 transition-colors">{deal.brand}</h4>
-                    <p className="text-[10px] text-[#A1A1AA] flex items-center gap-1.5 mt-0.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        deal.status === 'Signed' ? 'bg-emerald-500' : deal.status === 'Negotiating' ? 'bg-amber-500' : 'bg-blue-400'
-                      }`} />
-                      <span>{deal.status} (Click to shift)</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="font-bold text-sm text-foreground">${deal.value.toLocaleString()}</div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Expires {deal.date}</p>
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveDeal(deal.id, deal.brand);
-                    }}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-muted transition-all shrink-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
+        <StudioCard
+          cornerBrackets={true}
+          watermark={true}
+          className="flex flex-col justify-between"
+          title="Brand Pipeline Board"
+          headerAction={
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsPipelineOpen(true)}
+              className="h-7 rounded-lg text-[10px] font-mono font-bold border-border/80 gap-1 px-2 text-foreground"
+            >
+              <Plus className="h-3 w-3" />
+              <span>ADD DEAL</span>
+            </Button>
+          }
+        >
+          {pipeline.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-3 my-auto">
+              <Briefcase className="h-8 w-8 text-amber-500/60 mx-auto" />
+              <div>
+                <h4 className="text-xs font-mono font-bold text-foreground">Pipeline Empty ($0.00)</h4>
+                <p className="text-[11px] text-muted-foreground mt-1 max-w-sm mx-auto font-sans">
+                  No active sponsorship negotiations logged. Click 'Add Deal' to log incoming brand leads, quotes, and commitments.
+                </p>
               </div>
-            ))}
-          </div>
+              <Button
+                onClick={() => setIsPipelineOpen(true)}
+                size="sm"
+                className="rounded-xl gap-1.5 text-xs font-mono font-bold bg-muted hover:bg-muted/80 text-foreground border border-border h-8 px-3 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>ADD BRAND DEAL</span>
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                {pipeline.map((deal) => (
+                  <div 
+                    key={deal.brand} 
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-border/70 hover:border-amber-500/30 transition-all cursor-pointer group"
+                    onClick={() => promoteDealStatus(deal.id, deal.status)}
+                    title="Click to advance status"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-xs text-amber-400 shrink-0 font-display">
+                        {deal.brand[0]}
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-xs text-foreground group-hover:text-amber-400 transition-colors font-mono">{deal.brand}</h4>
+                        <p className="text-[10px] font-mono text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            deal.status === 'Signed' ? 'bg-emerald-400' : deal.status === 'Negotiating' ? 'bg-amber-400' : 'bg-blue-400'
+                          }`} />
+                          <span>{deal.status}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="font-mono font-bold text-xs text-foreground">${deal.value.toLocaleString()}</div>
+                        <p className="text-[9px] font-mono text-muted-foreground mt-0.5">Expires {deal.date}</p>
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveDeal(deal.id, deal.brand);
+                        }}
+                        className="p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all shrink-0"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <Button 
             variant="outline" 
-            className="w-full rounded-xl mt-6 border-border hover:bg-muted font-bold text-xs cursor-pointer h-11 hover:text-amber-500"
+            className="w-full rounded-xl mt-4 border-border/80 hover:bg-muted font-mono font-bold text-xs cursor-pointer h-9 text-foreground"
             onClick={() => setIsPipelineOpen(!isPipelineOpen)}
           >
-            {isPipelineOpen ? 'Hide Negotiation Panel' : 'Manage Pipeline Intake'}
+            {isPipelineOpen ? 'HIDE REGISTRATION PANEL' : 'REGISTER DEAL OFFER'}
           </Button>
-        </Card>
+        </StudioCard>
       </div>
 
       {/* Slideout Intake Pipeline Panel */}
@@ -407,51 +533,51 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mt-6"
+            className="overflow-hidden mt-4"
           >
-            <Card className="p-8 rounded-3xl border border-border bg-card text-left">
-              <h4 className="text-base font-bold text-foreground mb-6 font-display flex items-center gap-2">
-                <Sparkles className="h-4.5 w-4.5 text-amber-500" />
+            <div className="p-6 rounded-2xl border border-border/80 bg-card text-left">
+              <h4 className="text-sm font-bold text-foreground mb-4 font-display flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-400" />
                 Register Sponsorship Pitch Offer
               </h4>
-              <form onSubmit={handleAddDealSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase block">Brand Name</label>
+              <form onSubmit={handleAddDealSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-mono font-bold text-muted-foreground uppercase block">Brand Name</label>
                   <input
                     type="text"
                     value={dealBrand}
                     onChange={(e) => setDealBrand(e.target.value)}
                     placeholder="e.g. Notion, Framer"
-                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground outline-none focus:border-amber-500"
+                    className="w-full bg-background border border-border/80 rounded-xl px-3 py-2 text-xs text-foreground outline-none focus:border-amber-400 font-mono"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase block">Deal Value ($)</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-mono font-bold text-muted-foreground uppercase block">Deal Value ($)</label>
                   <input
                     type="number"
                     value={dealValue}
                     onChange={(e) => setDealValue(e.target.value)}
                     placeholder="e.g. 2400"
-                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground outline-none focus:border-amber-500"
+                    className="w-full bg-background border border-border/80 rounded-xl px-3 py-2 text-xs text-foreground outline-none focus:border-amber-400 font-mono"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase block">Status</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-mono font-bold text-muted-foreground uppercase block">Status</label>
                   <select
                     value={dealStatus}
                     onChange={(e) => setDealStatus(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl px-2 py-2 text-xs text-foreground outline-none focus:border-amber-500"
+                    className="w-full bg-background border border-border/80 rounded-xl px-2.5 py-2 text-xs text-foreground outline-none focus:border-amber-400 font-mono"
                   >
                     <option value="Briefing">Briefing Pitch</option>
                     <option value="Negotiating">Negotiating Terms</option>
                     <option value="Signed">Agreement Signed</option>
                   </select>
                 </div>
-                <Button type="submit" className="rounded-xl w-full text-xs font-bold h-9 bg-amber-500 hover:bg-amber-600 text-zinc-950 cursor-pointer">
-                  Register Interest
+                <Button type="submit" className="rounded-xl w-full text-xs font-mono font-bold h-9 bg-amber-400 hover:bg-amber-300 text-zinc-950 cursor-pointer">
+                  REGISTER DEAL
                 </Button>
               </form>
-            </Card>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -464,52 +590,52 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
               onClick={() => setIsAddStreamOpen(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-md bg-card border border-border rounded-3xl p-8 z-10 text-left shadow-2xl"
+              className="relative w-full max-w-md bg-card border border-border/80 rounded-2xl p-6 z-10 text-left shadow-2xl"
             >
               <button 
                 onClick={() => setIsAddStreamOpen(false)} 
-                className="absolute top-6 right-6 p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="absolute top-5 right-5 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
 
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-amber-500" />
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground font-display">New Revenue Feed</h3>
+                  <h3 className="text-base font-bold text-foreground font-display">New Revenue Stream</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Integrate transactional products, sponsor pay outs or ads.</p>
                 </div>
               </div>
 
-              <form onSubmit={handleAddStreamSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Stream Name</label>
+              <form onSubmit={handleAddStreamSubmit} className="space-y-3.5 font-mono text-xs">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Stream Name</label>
                   <input
                     type="text"
                     value={streamName}
                     onChange={(e) => setStreamName(e.target.value)}
-                    placeholder="e.g. Masterclass PDF Sales"
-                    className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 text-foreground"
+                    placeholder="e.g. Masterclass Course Sales"
+                    className="w-full bg-background border border-border/80 rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-400 text-foreground"
                     autoFocus
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Channel Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Channel Type</label>
                     <select
                       value={streamPlatform}
                       onChange={(e) => setStreamPlatform(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none text-foreground capitalize"
+                      className="w-full bg-background border border-border/80 rounded-xl px-2.5 py-2 text-xs outline-none text-foreground capitalize"
                     >
                       <option value="youtube">YouTube ads</option>
                       <option value="instagram">Instagram</option>
@@ -519,12 +645,12 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Category</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Category</label>
                     <select
                       value={streamType}
                       onChange={(e) => setStreamType(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm outline-none text-foreground"
+                      className="w-full bg-background border border-border/80 rounded-xl px-2.5 py-2 text-xs outline-none text-foreground"
                     >
                       <option value="Platform Ads">Platform Ads</option>
                       <option value="Sponsorships">Sponsorships</option>
@@ -534,20 +660,20 @@ export default function MonetizationView({ showToast }: { showToast: (msg: strin
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Estimated Amount ($)</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Estimated Amount ($)</label>
                   <input
                     type="number"
                     value={streamAmount}
                     onChange={(e) => setStreamAmount(e.target.value)}
                     placeholder="e.g. 1500"
-                    className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 text-foreground"
+                    className="w-full bg-background border border-border/80 rounded-xl px-3 py-2 text-xs outline-none focus:border-amber-400 text-foreground"
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-border mt-6 justify-end">
-                  <Button type="button" variant="ghost" className="rounded-xl px-4 text-xs font-semibold text-muted-foreground" onClick={() => setIsAddStreamOpen(false)}>Cancel</Button>
-                  <Button type="submit" className="rounded-xl px-5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-zinc-950">Add Stream</Button>
+                <div className="flex items-center gap-2 pt-3 border-t border-border/50 mt-5 justify-end">
+                  <Button type="button" variant="ghost" className="rounded-xl px-3 text-xs font-mono font-semibold text-muted-foreground h-9" onClick={() => setIsAddStreamOpen(false)}>CANCEL</Button>
+                  <Button type="submit" className="rounded-xl px-4 text-xs font-mono font-bold bg-amber-400 hover:bg-amber-300 text-zinc-950 h-9">ADD STREAM</Button>
                 </div>
               </form>
             </motion.div>
